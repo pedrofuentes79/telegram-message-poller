@@ -1,4 +1,6 @@
 env/
 secrets.py
+secrets.json
 *.session
 app_info
+bin/*
