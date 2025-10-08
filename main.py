@@ -1,6 +1,8 @@
 import asyncio
 from telethon import TelegramClient
 from secrets import API_ID, API_HASH, SESSION_NAME, TARGET
+from send_notification import send_alarm
+
 
 
 async def main():
@@ -40,6 +42,7 @@ async def main():
             sender_name = getattr(sender, 'first_name', None) or getattr(sender, 'username', None) or 'Unknown'
             print(f"- [{m.date}] {sender_name}: {m.text[:200]!r}")
 
+        send_alarm()
     await client.disconnect()
 
 if __name__ == '__main__':
