@@ -9,19 +9,20 @@ import (
 	"path/filepath"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/session"
+	"github.com/gotd/td/tg"
 )
 
 // initialize global variables
 var apiID int
 var apiHash string
 var sessionName string
-var target int
+var target int64
 
 type Secrets struct {
 	ApiID       int    `json:"api_id"`
 	ApiHash     string `json:"api_hash"`
 	SessionName string `json:"session_name"`
-	Target      int    `json:"target"`
+	Target      int64  `json:"target"`
 	PhoneNumber string `json:"phone_number"`
 }
 var secrets Secrets
@@ -78,10 +79,75 @@ func main() {
 			fmt.Println("Already authenticated!")
 		}
 		
+		// Now that we're authenticated, we read the dialogs.
+		readDialogs(client, ctx)
+
 		return nil 
 	})
 	
 	if err != nil {
 		log.Fatalf("Error running client: %v", err)
 	}
+}
+
+
+func checkIfDialogIsTargetAndUnread(dialog *tg.Dialog){
+	peer := dialog.Peer
+	var id int64;
+	switch p := peer.(type) {
+	case *tg.PeerUser:
+		id = p.UserID
+	case *tg.PeerChat:
+		id = p.ChatID
+	case *tg.PeerChannel:
+		id = p.ChannelID
+	default:
+		id = 0
+		fmt.Println("Unknown peer type")
+	}
+
+	if id == target && dialog.UnreadCount > 0 {
+		fmt.Println("se pudrio el queso")
+	}
+
+
+}
+
+
+func readDialogs(client *telegram.Client, ctx context.Context) (bool, error) {
+	api := client.API()
+	dialogsResp, err := api.MessagesGetDialogs(ctx, &tg.MessagesGetDialogsRequest{
+		Limit: 10, 
+		OffsetPeer: &tg.InputPeerEmpty{},
+	})
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+
+	// Type switch to get the concrete type
+	switch d := dialogsResp.(type) {
+	case *tg.MessagesDialogs:
+		// This has both Dialogs and Chats/Users
+		fmt.Printf("Got %d dialogs\n", len(d.Dialogs))
+		for _, dialogClass := range d.Dialogs {
+			// dialogClass is a DialogClass interface, need to type-switch
+			if dialog, ok := dialogClass.(*tg.Dialog); ok {
+				checkIfDialogIsTargetAndUnread(dialog)
+			}
+		}
+	case *tg.MessagesDialogsSlice:
+		// This is used when there are more dialogs (pagination)
+		fmt.Printf("Got %d dialogs (slice, total: %d)\n", len(d.Dialogs), d.Count)
+		for _, dialogClass := range d.Dialogs {
+			// dialogClass is a DialogClass interface, need to type-switch
+			if dialog, ok := dialogClass.(*tg.Dialog); ok {
+				checkIfDialogIsTargetAndUnread(dialog)
+			}
+		}
+	default:
+		fmt.Printf("Unexpected dialog type: %T\n", d)
+	}
+
+	return false, nil
 }
