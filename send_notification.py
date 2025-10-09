@@ -86,6 +86,7 @@ def send_audio_notification(title, message, audio_file, forced_sink=None, urgenc
     if not should_send_alarm() and not skip_cooldown:
         print("Alarm on cooldown. Skipping audio notification.")
         send_notification(title, message, urgency="normal")
+        return
     
     original_sink = None
     try:

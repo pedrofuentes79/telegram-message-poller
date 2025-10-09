@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/session"
@@ -108,6 +109,13 @@ func checkIfDialogIsTargetAndUnread(dialog *tg.Dialog){
 
 	if id == target && dialog.UnreadCount > 0 {
 		fmt.Println("se pudrio el queso")
+		cmd := exec.Command("bash", "src/send_alert.sh")
+		cmd.Stdout = os.Stdout
+		
+		err := cmd.Run()
+		if err != nil {
+			log.Fatalf("sending alert failed to run, %v", err)
+		}
 	}
 
 
