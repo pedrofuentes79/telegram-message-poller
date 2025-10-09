@@ -1,4 +1,6 @@
 #! /bin/bash
+should_play_alert=$1
+
 
 play_alert() {
     paplay --device $1 /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga
@@ -14,5 +16,12 @@ ACTIVE_SINK=$(pactl get-default-sink)
 notify-send -u "critical" -a "Telegram Poller" -i "telegram" "You have unread messages" "Check your telegram"
 
 # Play an alert on the target sink and on the active sink
-play_alert $TARGET_SINK
-play_alert $ACTIVE_SINK
+if [ "$should_play_alert" == "send" ]; then
+    echo "playing alert"
+    play_alert $TARGET_SINK
+    play_alert $ACTIVE_SINK
+
+    # add a new line to the alarm log with date and time
+    current_datetime=$(date +%Y-%m-%dT%H:%M:%S)
+    echo "$current_datetime" >> logs/alarms.log
+fi
